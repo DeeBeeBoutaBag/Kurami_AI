@@ -12,6 +12,14 @@ function normalizeApiUrl(value?: string) {
 
 const API_URL = normalizeApiUrl(import.meta.env.VITE_API_URL);
 
+function requestHeaders(headers?: HeadersInit) {
+  const mergedHeaders = new Headers(headers);
+  if (!mergedHeaders.has("Content-Type")) mergedHeaders.set("Content-Type", "application/json");
+  const token = localStorage.getItem("rai_facilitator_token");
+  if (token && !mergedHeaders.has("Authorization")) mergedHeaders.set("Authorization", `Bearer ${token}`);
+  return mergedHeaders;
+}
+
 interface ApiErrorShape {
   error?: {
     code: string;
@@ -22,11 +30,8 @@ interface ApiErrorShape {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers ?? {})
-    },
-    ...options
+    ...options,
+    headers: requestHeaders(options.headers)
   });
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as ApiErrorShape;

@@ -695,7 +695,7 @@ app.post(
     res.cookie("facilitator_token", token, {
       httpOnly: true,
       secure: config.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: config.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 8 * 60 * 60 * 1000
     });
     res.json({ ok: true, token, roomScope });

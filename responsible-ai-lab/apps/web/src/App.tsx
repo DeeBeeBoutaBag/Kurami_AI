@@ -652,7 +652,22 @@ function PageShell({ children, compact = false }: { children: ReactNode; compact
 
 function TopNav() {
   const participant = useSession((state) => state.participant);
+  const setParticipant = useSession((state) => state.setParticipant);
+  const setEvent = useSession((state) => state.setEvent);
   const connection = useSession((state) => state.connection);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const logoutStudent = () => {
+    clearStoredStudentSession();
+    setParticipant(null);
+    setEvent(null);
+    queryClient.removeQueries({ queryKey: ["event"] });
+    queryClient.removeQueries({ queryKey: ["workshop"] });
+    queryClient.removeQueries({ queryKey: ["leaderboard"] });
+    toast({ tone: "success", message: "Logged out. You can join again or switch students." });
+    navigate("/join", { replace: true });
+  };
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-midnight/88 backdrop-blur">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3" aria-label="Primary">
@@ -671,14 +686,24 @@ function TopNav() {
         <div className="flex items-center gap-2">
           {participant ? <StatusPill tone="good">{participant.group}</StatusPill> : null}
           <ConnectionPill connection={connection} />
+          {participant ? (
+            <button type="button" className="nav-item nav-action nav-logout" onClick={logoutStudent}>
+              <LogOut size={15} /> <span>Log out</span>
+            </button>
+          ) : null}
         </div>
       </nav>
-      <nav className="mx-auto flex max-w-7xl gap-2 overflow-x-auto border-t border-white/10 px-4 py-2 md:hidden" aria-label="Mobile primary">
+      <nav className="mobile-primary-nav mx-auto flex max-w-7xl gap-2 overflow-x-auto border-t border-white/10 px-4 py-2 md:hidden" aria-label="Mobile primary">
         <NavItem to="/join">Join</NavItem>
         <NavItem to="/hub">Hub</NavItem>
         <NavItem to="/leaderboard">Leaderboard</NavItem>
         <NavItem to="/charter">Charter</NavItem>
         <NavItem to="/facilitator">Facilitator</NavItem>
+        {participant ? (
+          <button type="button" className="nav-item nav-action" onClick={logoutStudent}>
+            <LogOut size={15} /> Log out
+          </button>
+        ) : null}
       </nav>
     </header>
   );
@@ -4216,6 +4241,10 @@ function clearStoredStudentSession() {
   localStorage.removeItem("rai_session_id");
   localStorage.removeItem("rai_participant");
   localStorage.removeItem("rai_event");
+  sessionStorage.removeItem("kurami_whos_who_room");
+  sessionStorage.removeItem("kurami_detective_room");
+  sessionStorage.removeItem("kurami_story_room");
+  sessionStorage.removeItem("kurami_court_room");
 }
 
 function isExpiredStudentSession(message: string) {

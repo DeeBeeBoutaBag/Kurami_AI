@@ -136,6 +136,20 @@ textarea:focus-visible {
   color: var(--ivory);
 }
 
+.nav-action {
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  white-space: nowrap;
+}
+
+.nav-logout {
+  min-height: 36px;
+  padding-inline: 10px;
+}
+
 .button {
   min-height: 44px;
   display: inline-flex;
@@ -2155,6 +2169,11 @@ meter {
 
   .nav-item {
     display: none;
+  }
+
+  .mobile-primary-nav .nav-item {
+    display: inline-flex;
+    flex: 0 0 auto;
   }
 }
 

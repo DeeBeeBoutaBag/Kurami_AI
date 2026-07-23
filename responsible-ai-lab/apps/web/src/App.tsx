@@ -612,23 +612,33 @@ function AppRoutes() {
       <Route path="/leaderboard" element={<LeaderboardPage />} />
       <Route path="/badges" element={<BadgesPage />} />
       <Route path="/closing" element={<ClosingPage />} />
-      <Route path="/whos-who" element={<WhoWhoPage />} />
-      <Route path="/whos-who/room/:roomId" element={<WhoWhoPage />} />
-      <Route path="/data-detective" element={<DataDetectivePage />} />
-      <Route path="/data-detective/room/:roomId" element={<DataDetectivePage />} />
-      <Route path="/data-detective/investigation/:teamId" element={<DataDetectivePage />} />
-      <Route path="/storibloom" element={<StoribloomPage />} />
-      <Route path="/storibloom/story/:storyId" element={<StoribloomPage />} />
-      <Route path="/storibloom/gallery" element={<StoryGalleryPage />} />
-      <Route path="/kurami-court" element={<KuramiCourtPage />} />
-      <Route path="/kurami-court/case/:caseId" element={<KuramiCourtPage />} />
-      <Route path="/charter" element={<CharterPage />} />
+      <Route path="/whos-who" element={<RequireParticipant><WhoWhoPage /></RequireParticipant>} />
+      <Route path="/whos-who/room/:roomId" element={<RequireParticipant><WhoWhoPage /></RequireParticipant>} />
+      <Route path="/data-detective" element={<RequireParticipant><DataDetectivePage /></RequireParticipant>} />
+      <Route path="/data-detective/room/:roomId" element={<RequireParticipant><DataDetectivePage /></RequireParticipant>} />
+      <Route path="/data-detective/investigation/:teamId" element={<RequireParticipant><DataDetectivePage /></RequireParticipant>} />
+      <Route path="/storibloom" element={<RequireParticipant><StoribloomPage /></RequireParticipant>} />
+      <Route path="/storibloom/story/:storyId" element={<RequireParticipant><StoribloomPage /></RequireParticipant>} />
+      <Route path="/storibloom/gallery" element={<RequireParticipant><StoryGalleryPage /></RequireParticipant>} />
+      <Route path="/kurami-court" element={<RequireParticipant><KuramiCourtPage /></RequireParticipant>} />
+      <Route path="/kurami-court/case/:caseId" element={<RequireParticipant><KuramiCourtPage /></RequireParticipant>} />
+      <Route path="/charter" element={<RequireParticipant><CharterPage /></RequireParticipant>} />
       <Route path="/facilitator/login" element={<FacilitatorLoginPage />} />
       <Route path="/facilitator" element={<FacilitatorDashboardPage />} />
       <Route path="/facilitator/:section" element={<FacilitatorDashboardPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+}
+
+function RequireParticipant({ children }: { children: ReactNode }) {
+  const participant = useSession((state) => state.participant);
+  const location = useLocation();
+  if (!participant) {
+    const returnTo = encodeURIComponent(`${location.pathname}${location.search}`);
+    return <Navigate to={`/join?returnTo=${returnTo}`} replace />;
+  }
+  return children;
 }
 
 function PageShell({ children, compact = false }: { children: ReactNode; compact?: boolean }) {

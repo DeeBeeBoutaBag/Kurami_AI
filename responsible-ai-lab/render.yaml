@@ -64,10 +64,11 @@ services:
           name: responsible-ai-lab-server
           property: host
 
+  - type: keyvalue
+    name: responsible-ai-lab-redis
+    plan: starter
+    ipAllowList: []
+
 databases:
   - name: responsible-ai-lab-db
     plan: basic-256mb
-
-keyValue:
-  - name: responsible-ai-lab-redis
-    plan: starter

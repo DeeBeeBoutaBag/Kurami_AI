@@ -968,6 +968,7 @@ function WhoWhoPage() {
   const toast = useToast();
   const { data } = useQuery({ queryKey: ["workshop", "whos-who", participant.id], queryFn: () => api.workshopState<WhoWhoState>("whos-who", participant.id), refetchInterval: 7_000 });
   const [roomCode, setRoomCode] = useState(() => params.roomId ?? (typeof window === "undefined" ? "" : window.sessionStorage.getItem("kurami_whos_who_room") ?? ""));
+  const [roomCodeEdited, setRoomCodeEdited] = useState(false);
   const [chatText, setChatText] = useState("");
   const [accuseIdentityId, setAccuseIdentityId] = useState("");
   const [accuseReason, setAccuseReason] = useState("");
@@ -975,14 +976,15 @@ function WhoWhoPage() {
   const now = useNow();
 
   useEffect(() => {
-    if (!roomCode && data?.room.id) setRoomCode(data.room.id);
-  }, [data?.room.id, roomCode]);
+    if (!roomCode && !roomCodeEdited && data?.room.id) setRoomCode(data.room.id);
+  }, [data?.room.id, roomCode, roomCodeEdited]);
 
   const joinRoom = useMutation({
     mutationFn: () => api.whoWhoJoinRoom(normalizeWhoWhoRoomId(roomCode), participant.id),
     onSuccess: () => {
       if (typeof window !== "undefined") window.sessionStorage.setItem("kurami_whos_who_room", normalizeWhoWhoRoomId(roomCode));
       setRoomCode(normalizeWhoWhoRoomId(roomCode));
+      setRoomCodeEdited(false);
       toast({ tone: "success", message: "Room joined. Your cover name is live." });
       void queryClient.invalidateQueries({ queryKey: ["workshop", "whos-who", participant.id] });
     },
@@ -1078,7 +1080,17 @@ function WhoWhoPage() {
         >
           <label>
             <span className="field-label">Room ID</span>
-            <input className="input" value={roomCode} onChange={(event) => setRoomCode(event.target.value)} onBlur={() => setRoomCode(normalizeWhoWhoRoomId(roomCode))} placeholder="gold-alpha" autoCapitalize="none" />
+            <input
+              className="input"
+              value={roomCode}
+              onChange={(event) => {
+                setRoomCodeEdited(true);
+                setRoomCode(event.target.value);
+              }}
+              onBlur={() => setRoomCode(normalizeWhoWhoRoomId(roomCode))}
+              placeholder="gold-alpha"
+              autoCapitalize="none"
+            />
           </label>
           <Button type="submit" disabled={normalizeWhoWhoRoomId(roomCode).length < 3 || joinRoom.isPending}>
             <Play size={18} /> Join Room

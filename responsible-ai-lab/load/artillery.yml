@@ -1,0 +1,95 @@
+config:
+  target: "http://localhost:4000"
+  variables:
+    eventCode:
+      - "ETHICS2026"
+    facilitatorPin:
+      - "2468"
+  phases:
+    - duration: 120
+      arrivalRate: 1
+      rampTo: 4
+      name: "80 participants joining over several minutes"
+  socketio:
+    transports: ["websocket"]
+  defaults:
+    headers:
+      content-type: "application/json"
+
+scenarios:
+  - name: "Participant rotation activity"
+    weight: 85
+    flow:
+      - post:
+          url: "/api/events/join"
+          json:
+            eventCode: "{{ eventCode }}"
+            nickname: "Load {{ $randomNumber(1, 999999) }}"
+            acceptedResponsibleUse: true
+          capture:
+            - json: "$.participant.id"
+              as: "participantId"
+            - json: "$.participant.teamId"
+              as: "teamId"
+      - get:
+          url: "/api/events/current/state"
+      - get:
+          url: "/api/workshops/whos-who/state?participantId={{ participantId }}"
+      - post:
+          url: "/api/kurami-court/vote"
+          json:
+            participantId: "{{ participantId }}"
+            teamId: "{{ teamId }}"
+            caseId: "ai-school-counselor"
+            phase: "initial"
+            vote: "need-more-information"
+            reason: "I need to know who can access student conversations."
+      - think: 2
+      - post:
+          url: "/api/charter/proposal"
+          json:
+            teamId: "{{ teamId }}"
+            text: "People should know when they are interacting with AI."
+
+  - name: "Facilitator announcements and rotation"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/facilitator/login"
+          json:
+            pin: "{{ facilitatorPin }}"
+            roomScope: "lead"
+      - post:
+          url: "/api/events/current/announce"
+          json:
+            message: "Load test announcement"
+      - post:
+          url: "/api/facilitator/control"
+          json:
+            action: "advance-rotation"
+
+  - name: "AI queue pressure"
+    weight: 5
+    flow:
+      - post:
+          url: "/api/events/join"
+          json:
+            eventCode: "{{ eventCode }}"
+            nickname: "Story {{ $randomNumber(1, 999999) }}"
+            acceptedResponsibleUse: true
+          capture:
+            - json: "$.participant.teamId"
+              as: "teamId"
+      - post:
+          url: "/api/ai/generate"
+          json:
+            teamId: "{{ teamId }}"
+            kind: "story-draft"
+            payload:
+              teamName: "Load Team"
+              genre: "Science fiction"
+              setting: "Oakland in the year 2120"
+              theme: "Responsibility"
+              protagonist: "Mika"
+              conflict: "A city shortcut leaves people out"
+              approvedPlan: "Beginning, turning point, ending with community review."

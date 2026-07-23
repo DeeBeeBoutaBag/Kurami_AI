@@ -1,0 +1,675 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventStatus {
+  draft
+  onboarding
+  running
+  paused
+  ended
+}
+
+enum RotationStatus {
+  locked
+  open
+  paused
+  complete
+}
+
+enum ParticipantStatus {
+  active
+  absent
+  removed
+}
+
+enum ProgressStatus {
+  locked
+  open
+  complete
+}
+
+enum VotePhase {
+  initial
+  final
+}
+
+enum ContentStatus {
+  draft
+  flagged
+  approved
+  published
+  unpublished
+  removed
+}
+
+enum AIRequestStatus {
+  queued
+  running
+  complete
+  failed
+  canceled
+}
+
+model Facilitator {
+  id           String   @id @default(cuid())
+  displayName  String
+  role         String   @default("lead-facilitator")
+  pinHash      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model Event {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  name           String
+  status         EventStatus  @default(draft)
+  currentRotation Int         @default(0)
+  rotationStartedAt DateTime?
+  rotationEndsAt DateTime?
+  announcement   String?
+  demoMode       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  settings       EventSettings?
+  rotations      Rotation[]
+  groups         RotationGroup[]
+  participants   Participant[]
+  teams          Team[]
+  badges         Badge[]
+  pointTransactions PointTransaction[]
+  announcements  Announcement[]
+  whoWhoRooms    WhoWhoRoom[]
+  detectiveScenarios DetectiveScenario[]
+  courtCases     CourtCase[]
+  charterProposals CharterProposal[]
+  moderationFlags ModerationFlag[]
+  aiRequestLogs  AIRequestLog[]
+  auditLogs      AuditLog[]
+
+  @@index([code])
+}
+
+model EventSettings {
+  id                    String   @id @default(cuid())
+  eventId               String   @unique
+  event                 Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  leaderboardEnabled    Boolean  @default(true)
+  leaderboardMode       String   @default("team")
+  aiEnabled             Boolean  @default(true)
+  lowBandwidthMode      Boolean  @default(false)
+  fallbackMode          Boolean  @default(false)
+  manuallyUnlockedWorkshops String[] @default([])
+  lockedWorkshops       String[] @default([])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Rotation {
+  id         String         @id @default(cuid())
+  eventId    String
+  event      Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  number     Int
+  status     RotationStatus @default(locked)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([eventId, number])
+  @@index([eventId, status])
+}
+
+model RotationGroup {
+  id            String        @id @default(cuid())
+  eventId       String
+  event         Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name          String
+  color         String
+  participants  Participant[]
+  teams         Team[]
+  whoWhoRooms   WhoWhoRoom[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([eventId, name])
+  @@index([eventId])
+}
+
+model Participant {
+  id                 String              @id @default(cuid())
+  eventId            String
+  event              Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  nickname           String
+  normalizedNickname String
+  status             ParticipantStatus   @default(active)
+  groupId            String
+  group              RotationGroup       @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  teamId             String
+  team               Team                @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  whoWhoRoomId       String?
+  points             Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  sessions           ParticipantSession[]
+  progress           WorkshopProgress[]
+  badges             ParticipantBadge[]
+  pointTransactions  PointTransaction[]
+  whoWhoResponses    WhoWhoResponse[]
+  whoWhoVotes        WhoWhoVote[]
+  detectiveDiscoveries DetectiveDiscovery[]
+  storyContributions StoryContribution[]
+  courtVotes         CourtVote[]
+  charterVotes       CharterVote[]
+  moderationFlags    ModerationFlag[]
+
+  @@unique([eventId, normalizedNickname])
+  @@index([eventId, status])
+  @@index([teamId])
+  @@index([groupId])
+}
+
+model ParticipantSession {
+  id            String      @id @default(cuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  sessionId     String      @unique
+  tokenHash     String
+  connected     Boolean     @default(false)
+  lastSeenAt    DateTime    @default(now())
+  userAgent     String?
+  createdAt     DateTime    @default(now())
+  expiresAt     DateTime?
+
+  @@index([participantId])
+  @@index([connected])
+}
+
+model Team {
+  id              String        @id @default(cuid())
+  eventId          String
+  event            Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  groupId          String
+  group            RotationGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  name             String
+  points           Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  participants     Participant[]
+  storyProjects    StoryProject[]
+  detectiveDiscoveries DetectiveDiscovery[]
+  detectiveRecommendations DetectiveRecommendation[]
+  courtReasoning   CourtReasoning[]
+  charterProposals CharterProposal[]
+
+  @@unique([eventId, name])
+  @@index([eventId])
+  @@index([groupId])
+}
+
+model WorkshopProgress {
+  id            String         @id @default(cuid())
+  participantId String
+  participant   Participant    @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  workshopId    String
+  status        ProgressStatus @default(locked)
+  stage         String?
+  points        Int            @default(0)
+  completedAt   DateTime?
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([participantId, workshopId])
+  @@index([workshopId, status])
+}
+
+model Badge {
+  id          String   @id
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String
+  description String
+  workshopId  String?
+  createdAt   DateTime @default(now())
+  participantBadges ParticipantBadge[]
+
+  @@index([eventId])
+}
+
+model ParticipantBadge {
+  id            String      @id @default(cuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  badgeId       String
+  badge         Badge       @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt     DateTime    @default(now())
+
+  @@unique([participantId, badgeId])
+}
+
+model PointTransaction {
+  id            String      @id @default(cuid())
+  eventId        String
+  event          Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participantId String?
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  teamId        String?
+  workshopId    String
+  reason        String
+  points        Int
+  createdBy     String?
+  createdAt     DateTime    @default(now())
+
+  @@index([eventId, workshopId])
+  @@index([participantId])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  message   String
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([eventId, createdAt])
+}
+
+model WhoWhoRoom {
+  id          String       @id @default(cuid())
+  eventId      String
+  event        Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  groupId      String
+  group        RotationGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  name         String
+  stage        String       @default("lobby")
+  activePromptId String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  rounds       WhoWhoRound[]
+  identities   WhoWhoIdentity[]
+
+  @@unique([eventId, groupId, name])
+  @@index([eventId])
+}
+
+model WhoWhoRound {
+  id          String       @id @default(cuid())
+  roomId      String
+  room        WhoWhoRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  number      Int
+  promptId    String
+  promptText  String
+  stage       String       @default("instructions")
+  submissionsCloseAt DateTime?
+  votingCloseAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  responses   WhoWhoResponse[]
+  votes       WhoWhoVote[]
+
+  @@unique([roomId, number])
+  @@index([roomId, stage])
+}
+
+model WhoWhoIdentity {
+  id            String       @id @default(cuid())
+  roomId        String
+  room          WhoWhoRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  displayName   String
+  isAi          Boolean      @default(false)
+  personaId     String?
+  participantId String?
+  createdAt     DateTime     @default(now())
+  responses     WhoWhoResponse[]
+  votes         WhoWhoVote[]
+
+  @@unique([roomId, displayName])
+  @@index([roomId, isAi])
+}
+
+model WhoWhoResponse {
+  id            String       @id @default(cuid())
+  roundId       String
+  round         WhoWhoRound  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  identityId    String
+  identity      WhoWhoIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  participantId String?
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  text          String
+  moderatedText String?
+  flagged       Boolean      @default(false)
+  revealed      Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+
+  @@index([roundId])
+  @@index([identityId])
+}
+
+model WhoWhoVote {
+  id            String       @id @default(cuid())
+  roundId       String
+  round         WhoWhoRound  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  identityId    String
+  identity      WhoWhoIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  confidence    Int
+  evidence      String
+  finalVote     Boolean      @default(false)
+  changedOpinion Boolean     @default(false)
+  createdAt     DateTime     @default(now())
+
+  @@index([roundId])
+  @@index([participantId])
+}
+
+model DetectiveScenario {
+  id          String    @id @default(cuid())
+  eventId      String
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String
+  description String
+  activeStage Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  evidence    DetectiveEvidence[]
+  recommendations DetectiveRecommendation[]
+
+  @@unique([eventId, name])
+}
+
+model DetectiveEvidence {
+  id          String    @id
+  scenarioId  String
+  scenario    DetectiveScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  stage       Int
+  title       String
+  type        String
+  summary     String
+  body        String
+  categories  String[]
+  hiddenValue Int?
+  revealed    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  discoveries DetectiveDiscovery[]
+
+  @@index([scenarioId, stage])
+}
+
+model DetectiveDiscovery {
+  id            String    @id @default(cuid())
+  evidenceId    String
+  evidence      DetectiveEvidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  participantId String?
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  teamId        String
+  team          Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  category      String
+  explanation   String
+  affectedGroups String
+  safeguard     String
+  approved      Boolean   @default(false)
+  pointsAwarded Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  @@unique([teamId, evidenceId])
+  @@index([teamId])
+}
+
+model DetectiveRecommendation {
+  id                  String   @id @default(cuid())
+  scenarioId           String
+  scenario             DetectiveScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  teamId               String
+  team                 Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  stopImmediately      String
+  missingInformation   String
+  likelyHarmed         String
+  safeguard            String
+  decision             String
+  accountableParty     String
+  appealProcess        String
+  pointsAwarded        Int      @default(0)
+  createdAt            DateTime @default(now())
+
+  @@unique([scenarioId, teamId])
+}
+
+model StoryProject {
+  id        String    @id @default(cuid())
+  teamId    String
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  title     String?
+  genre     String?
+  setting   String?
+  theme     String?
+  emotion   String?
+  audience  String?
+  stage     Int       @default(1)
+  status    ContentStatus @default(draft)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  stages    StoryStage[]
+  contributions StoryContribution[]
+  generations StoryGeneration[]
+  revisions StoryRevision[]
+  publishedStory PublishedStory?
+
+  @@index([teamId])
+}
+
+model StoryStage {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     StoryProject @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  stage     Int
+  status    ProgressStatus @default(open)
+  data      Json?
+  completedAt DateTime?
+
+  @@unique([storyId, stage])
+}
+
+model StoryContribution {
+  id            String    @id @default(cuid())
+  storyId        String
+  story          StoryProject @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  participantId String?
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  stage         Int
+  text          String
+  createdAt     DateTime @default(now())
+
+  @@index([storyId, stage])
+}
+
+model StoryGeneration {
+  id        String    @id @default(cuid())
+  storyId   String
+  story     StoryProject @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  prompt    String
+  output    String
+  model     String
+  status    AIRequestStatus @default(complete)
+  aiRequestLogId String?
+  createdAt DateTime @default(now())
+}
+
+model StoryRevision {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     StoryProject @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  beforeText String
+  afterText  String
+  reason     String
+  createdAt  DateTime @default(now())
+}
+
+model PublishedStory {
+  id        String   @id @default(cuid())
+  storyId   String   @unique
+  story     StoryProject @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  title     String
+  finalText String
+  authorshipStatement String
+  ethicalRevision String
+  humanContributionSummary String
+  aiContributionSummary String
+  status    ContentStatus @default(flagged)
+  featured  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CourtCase {
+  id            String   @id
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  title          String
+  scenario       String
+  missingDetail  String
+  keyIssues      String[]
+  active         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  evidenceReveals CourtEvidenceReveal[]
+  votes          CourtVote[]
+  reasoning      CourtReasoning[]
+
+  @@index([eventId])
+}
+
+model CourtEvidenceReveal {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      CourtCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  revealed  Boolean  @default(false)
+  revealOrder Int     @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([caseId, revealed])
+}
+
+model CourtVote {
+  id            String      @id @default(cuid())
+  caseId        String
+  case          CourtCase   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  teamId        String
+  phase         VotePhase
+  vote          String
+  reason        String
+  createdAt     DateTime    @default(now())
+
+  @@unique([caseId, participantId, phase])
+  @@index([caseId, phase])
+  @@index([teamId])
+}
+
+model CourtReasoning {
+  id          String    @id @default(cuid())
+  caseId      String
+  case        CourtCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  teamId      String
+  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  reasoning   String
+  stakeholders String
+  accountability String
+  appeal      String
+  highlighted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([caseId, teamId])
+}
+
+model CharterProposal {
+  id        String    @id @default(cuid())
+  eventId    String
+  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teamId     String?
+  team       Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  text       String
+  status     ContentStatus @default(flagged)
+  createdAt  DateTime  @default(now())
+  votes      CharterVote[]
+
+  @@index([eventId, status])
+}
+
+model CharterVote {
+  id            String      @id @default(cuid())
+  proposalId    String
+  proposal      CharterProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([proposalId, participantId])
+}
+
+model ModerationFlag {
+  id            String      @id @default(cuid())
+  eventId        String
+  event          Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participantId String?
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  workshopId    String?
+  contentType   String
+  contentId     String?
+  reason        String
+  severity      String
+  redactedText  String?
+  resolved      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  resolvedAt    DateTime?
+
+  @@index([eventId, resolved])
+  @@index([participantId])
+}
+
+model AIRequestLog {
+  id          String    @id @default(cuid())
+  eventId      String
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teamId       String?
+  kind         String
+  model        String
+  status       AIRequestStatus @default(queued)
+  promptHash   String
+  tokenEstimate Int       @default(0)
+  errorMessage String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([eventId, status])
+  @@index([teamId])
+}
+
+model AuditLog {
+  id            String      @id @default(cuid())
+  eventId        String?
+  event          Event?      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  facilitatorId String?
+  facilitator   Facilitator? @relation(fields: [facilitatorId], references: [id], onDelete: SetNull)
+  action        String
+  targetType    String
+  targetId      String?
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+
+  @@index([eventId, createdAt])
+  @@index([facilitatorId])
+}

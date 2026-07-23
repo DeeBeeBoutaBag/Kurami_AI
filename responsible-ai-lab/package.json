@@ -1,0 +1,40 @@
+{
+  "name": "responsible-ai-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Realtime Responsible AI workshop platform with four interactive workshop worlds.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c gold,green \"npm run dev -w @responsible-ai-lab/server\" \"npm run dev -w @responsible-ai-lab/web\"",
+    "build": "npm run build -w @responsible-ai-lab/shared && npm run build -w @responsible-ai-lab/ui && npm run build -w @responsible-ai-lab/server && npm run build -w @responsible-ai-lab/web",
+    "typecheck": "npm run build -w @responsible-ai-lab/shared && npm run build -w @responsible-ai-lab/ui && npm run typecheck -w @responsible-ai-lab/server && npm run typecheck -w @responsible-ai-lab/web",
+    "test": "npm run test -w @responsible-ai-lab/shared && npm run test -w @responsible-ai-lab/server",
+    "test:e2e": "playwright test",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:push": "prisma db push --schema prisma/schema.prisma",
+    "db:seed": "tsx prisma/seed.ts",
+    "load:test": "artillery run load/artillery.yml",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.3",
+    "@types/node": "^20.14.10",
+    "artillery": "^2.0.20",
+    "concurrently": "^8.2.2",
+    "prettier": "^3.3.2",
+    "prisma": "^5.16.1",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
+    "vitest": "^1.6.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

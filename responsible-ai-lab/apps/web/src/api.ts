@@ -51,6 +51,7 @@ export const api = {
   leaderboard: (mode: "individual" | "team" | "rotation-group") => request<Array<{ id: string; label: string; points: number; group: string }>>(`/api/leaderboard?mode=${mode}`),
   facilitatorLogin: (pin: string, roomScope: FacilitatorRoomScope) =>
     request<{ ok: true; token: string; roomScope: FacilitatorRoomScope }>("/api/facilitator/login", { method: "POST", body: JSON.stringify({ pin, roomScope }) }),
+  facilitatorLogout: () => request<{ ok: true }>("/api/facilitator/logout", { method: "POST" }),
   dashboard: () => request<DashboardResponse>("/api/facilitator/dashboard"),
   exportResults: () => request<EventExportResponse>("/api/facilitator/export"),
   control: (body: { action: string; minutes?: number }) => request<EventState>("/api/facilitator/control", { method: "POST", body: JSON.stringify(body) }),

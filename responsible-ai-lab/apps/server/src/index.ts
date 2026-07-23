@@ -90,6 +90,15 @@ function facilitatorScope(res: express.Response): FacilitatorScope {
   return (res.locals.facilitator as { scope?: FacilitatorScope } | undefined)?.scope ?? "lead";
 }
 
+function facilitatorCookieOptions(maxAge?: number) {
+  return {
+    httpOnly: true,
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
+    ...(maxAge ? { maxAge } : {})
+  };
+}
+
 app.set("trust proxy", 1);
 app.use(
   helmet({
@@ -692,13 +701,16 @@ app.post(
     const roomScope = input.roomScope ?? "lead";
     if (!verifyPinForScope(input.pin, roomScope)) throw new ApiError(401, "invalid_pin", "That facilitator PIN did not work for the selected room.");
     const token = signFacilitatorToken(roomScope);
-    res.cookie("facilitator_token", token, {
-      httpOnly: true,
-      secure: config.NODE_ENV === "production",
-      sameSite: config.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 8 * 60 * 60 * 1000
-    });
+    res.cookie("facilitator_token", token, facilitatorCookieOptions(8 * 60 * 60 * 1000));
     res.json({ ok: true, token, roomScope });
+  })
+);
+
+app.post(
+  "/api/facilitator/logout",
+  asyncHandler(async (_req, res) => {
+    res.clearCookie("facilitator_token", facilitatorCookieOptions());
+    res.json({ ok: true });
   })
 );
 

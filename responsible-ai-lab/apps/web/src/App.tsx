@@ -22,6 +22,7 @@ import {
   Lightbulb,
   ListChecks,
   Lock,
+  LogOut,
   Megaphone,
   Network,
   Pause,
@@ -3174,11 +3175,22 @@ function FacilitatorLoginPage() {
 
 function FacilitatorDashboardPage() {
   const token = useSession((state) => state.facilitatorToken);
+  const setToken = useSession((state) => state.setFacilitatorToken);
   const setEvent = useSession((state) => state.setEvent);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const toast = useToast();
   const [announcement, setAnnouncement] = useState("");
   const { data, error } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard, refetchInterval: 8_000, enabled: Boolean(token) });
+  const logout = useMutation({
+    mutationFn: api.facilitatorLogout,
+    onSettled: () => {
+      setToken(null);
+      queryClient.removeQueries({ queryKey: ["dashboard"] });
+      toast({ tone: "success", message: "Facilitator logged out. Choose another room." });
+      navigate("/facilitator/login", { replace: true });
+    }
+  });
   const control = useMutation({
     mutationFn: api.control,
     onSuccess: (event) => {
@@ -3223,10 +3235,15 @@ function FacilitatorDashboardPage() {
             Code {data.event.eventCode} · Rotation {data.event.currentRotation} · {isLead ? "Full event control" : `${scopedAssignment?.rotationGroup ?? "Room"} room view`} · {data.event.status}
           </p>
         </div>
-        <div className="timer-block">
-          <Clock size={24} />
-          <strong>{formatSeconds(data.event.timerSecondsRemaining)}</strong>
-          <span>Master timer</span>
+        <div className="dashboard-actions">
+          <div className="timer-block">
+            <Clock size={24} />
+            <strong>{formatSeconds(data.event.timerSecondsRemaining)}</strong>
+            <span>Master timer</span>
+          </div>
+          <Button tone="quiet" onClick={() => logout.mutate()} disabled={logout.isPending}>
+            <LogOut size={18} /> Switch room
+          </Button>
         </div>
       </section>
       {isLead ? (

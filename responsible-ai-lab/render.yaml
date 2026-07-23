@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     rootDir: responsible-ai-lab
-    buildCommand: npm ci && npm run db:generate && npm run build -w @responsible-ai-lab/shared && npm run build -w @responsible-ai-lab/server
+    buildCommand: npm ci --include=dev && npm run db:generate && npm run build -w @responsible-ai-lab/shared && npm run build -w @responsible-ai-lab/server
     startCommand: npm run db:migrate && npm run db:seed && npm run start -w @responsible-ai-lab/server
     healthCheckPath: /health
     envVars:
@@ -51,7 +51,7 @@ services:
     name: responsible-ai-lab-web
     runtime: static
     rootDir: responsible-ai-lab
-    buildCommand: npm ci && npm run build -w @responsible-ai-lab/shared && npm run build -w @responsible-ai-lab/ui && npm run build -w @responsible-ai-lab/web
+    buildCommand: npm ci --include=dev && npm run build -w @responsible-ai-lab/shared && npm run build -w @responsible-ai-lab/ui && npm run build -w @responsible-ai-lab/web
     staticPublishPath: apps/web/dist
     routes:
       - type: rewrite

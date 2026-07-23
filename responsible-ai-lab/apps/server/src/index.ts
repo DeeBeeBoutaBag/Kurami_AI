@@ -116,7 +116,7 @@ app.use(cookieParser());
 app.use(
   rateLimit({
     windowMs: 60_000,
-    limit: 180,
+    limit: config.NODE_ENV === "production" ? 3_000 : 600,
     standardHeaders: "draft-7",
     legacyHeaders: false
   })

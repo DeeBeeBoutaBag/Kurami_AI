@@ -88,7 +88,7 @@ There are four overall rooms. Data-Detective and Storibloom split each room in h
 
 1. Give the main room one Who's Who room ID.
 2. Wait until students see random cover names and roles.
-3. Click **Start Game**. Empty seats fill with hidden AI classmates until the room has 13 seats.
+3. Click **Start Game**. Empty seats fill with hidden AI classmates until the room has 21 seats.
 4. Run Day discussion, then Night accusation.
 5. Encourage role powers: Investigator, Archivist, Signal Reader, Skeptic, Protector, Witness, and Strategist.
 6. Resolve votes, move to the next Day, or reveal the room for debrief.

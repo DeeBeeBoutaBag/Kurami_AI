@@ -31,7 +31,7 @@ function stableIndex(seed: string, length: number) {
 }
 
 describe("EventStore demo mode", () => {
-  it("fills a solo student team with AI classmates and starts Who's Who with 13 seats", () => {
+  it("fills a solo student team with AI classmates and starts Who's Who with 21 seats", () => {
     const store = new EventStore({ eventCode: "DEMO", demoMode: true });
 
     const result = store.join({
@@ -68,9 +68,9 @@ describe("EventStore demo mode", () => {
       game: { seatsFilled: number; seatCount: number; aiRemaining?: number };
       chat: unknown[];
     };
-    expect(startedRoom.game.seatsFilled).toBe(13);
-    expect(startedRoom.game.seatCount).toBe(13);
-    expect(startedRoom.game.aiRemaining).toBeGreaterThanOrEqual(9);
+    expect(startedRoom.game.seatsFilled).toBe(21);
+    expect(startedRoom.game.seatCount).toBe(21);
+    expect(startedRoom.game.aiRemaining).toBeGreaterThanOrEqual(17);
     expect(startedRoom.chat.length).toBeGreaterThan(0);
     expect(detectiveState.roomIds).toEqual(["venture-north", "venture-south", "venture-east", "venture-west", "venture-ne", "venture-nw", "venture-se", "venture-sw"]);
     expect(detectiveState.activeRoom.id).toBe("venture-north");
@@ -366,7 +366,7 @@ describe("EventStore demo mode", () => {
       chat: unknown[];
     };
     const aiTarget = startedRoom.identities.find((identity) => identity.isAi);
-    expect(startedRoom.game.seatsFilled).toBe(13);
+    expect(startedRoom.game.seatsFilled).toBe(21);
     expect(startedRoom.game.phase).toBe("chat");
     expect(startedRoom.game.phaseName).toBe("Day");
     expect(startedRoom.game.phaseSecondsRemaining).toBeGreaterThan(0);
@@ -455,7 +455,7 @@ describe("EventStore demo mode", () => {
     const store = new EventStore({ eventCode: "LIVE", demoMode: false });
     let strategistParticipantId = "";
 
-    for (const index of range(12)) {
+    for (const index of range(20)) {
       const result = store.join({
         eventCode: "LIVE",
         nickname: `Role Student ${index + 1}`,

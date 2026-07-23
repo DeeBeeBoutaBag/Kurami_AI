@@ -106,7 +106,7 @@ type DetectiveDiscoverySubmission = Omit<DetectiveDiscoveryInput, "severity" | "
 };
 
 const DEMO_AI_COMPANIONS = ["AI Atlas", "AI Nova", "AI Cipher", "AI Sage", "AI River", "AI Sol"] as const;
-const WHOS_WHO_SEAT_COUNT = 13;
+const WHOS_WHO_SEAT_COUNT = 21;
 const WHOS_WHO_GAME_NAMES = [
   "Nova",
   "Orion",
@@ -2956,7 +2956,7 @@ export class EventStore {
     return ROTATION_GROUPS.flatMap((group) =>
       ["alpha", "beta"].map((suffix) => {
         const roomId = `${group.toLowerCase()}-${suffix}`;
-        const identities: WhoWhoIdentityState[] = WHOS_WHO_GAME_NAMES.slice(0, WHOS_WHO_SEAT_COUNT).map((displayName) => ({
+        const identities: WhoWhoIdentityState[] = WHOS_WHO_GAME_NAMES.map((displayName) => ({
           id: `${roomId}-${displayName.toLowerCase()}`,
           displayName,
           isAi: false,

@@ -106,7 +106,7 @@ type DetectiveDiscoverySubmission = Omit<DetectiveDiscoveryInput, "severity" | "
 };
 
 const DEMO_AI_COMPANIONS = ["AI Atlas", "AI Nova", "AI Cipher", "AI Sage", "AI River", "AI Sol"] as const;
-const WHOS_WHO_SEAT_COUNT = 21;
+const WHOS_WHO_SEAT_COUNT = 13;
 const WHOS_WHO_GAME_NAMES = [
   "Nova",
   "Orion",
@@ -2956,7 +2956,7 @@ export class EventStore {
     return ROTATION_GROUPS.flatMap((group) =>
       ["alpha", "beta"].map((suffix) => {
         const roomId = `${group.toLowerCase()}-${suffix}`;
-        const identities: WhoWhoIdentityState[] = WHOS_WHO_GAME_NAMES.map((displayName) => ({
+        const identities: WhoWhoIdentityState[] = WHOS_WHO_GAME_NAMES.slice(0, WHOS_WHO_SEAT_COUNT).map((displayName) => ({
           id: `${roomId}-${displayName.toLowerCase()}`,
           displayName,
           isAi: false,
@@ -3029,8 +3029,22 @@ export class EventStore {
   }
 
   private chooseRoom(group: RotationGroupName, teamId: string) {
+    const groupRooms = [...this.rooms.values()]
+      .filter((room) => room.group === group)
+      .sort((left, right) => {
+        const leftFilled = this.whoWhoSeatsFilled(left);
+        const rightFilled = this.whoWhoSeatsFilled(right);
+        if (leftFilled !== rightFilled) return leftFilled - rightFilled;
+        return left.id.localeCompare(right.id);
+      });
+    const openRoom = groupRooms.find((room) => this.whoWhoSeatsFilled(room) < room.seatCount);
+    if (openRoom) return openRoom.id;
     const teamNumber = Number(teamId.split("-").at(-1) ?? "1");
     return `${group.toLowerCase()}-${teamNumber % 2 === 0 ? "beta" : "alpha"}`;
+  }
+
+  private whoWhoSeatsFilled(room: WhoWhoRoomState) {
+    return room.identities.filter((identity) => identity.participantId || identity.isAi).length;
   }
 
   private chooseBalancedWorkshopGroup() {
@@ -3210,7 +3224,14 @@ export class EventStore {
 
   private assignHumanIdentity(roomId: string, participantId: string) {
     const room = this.requireRoom(roomId);
-    const identity = room.identities.find((item) => item.participantId === participantId) ?? this.assignIdentitySlot(room, participantId, false, participantId);
+    const existingIdentity = room.identities.find((item) => item.participantId === participantId);
+    if (existingIdentity) return existingIdentity.id;
+    const available = room.identities.filter((identity) => !identity.participantId);
+    if (available.length === 0) {
+      this.rooms.set(room.id, room);
+      return "";
+    }
+    const identity = this.assignIdentitySlot(room, participantId, false, participantId);
     this.rooms.set(room.id, room);
     return identity.id;
   }
@@ -3224,7 +3245,7 @@ export class EventStore {
 
   private assignIdentitySlot(room: WhoWhoRoomState, participantId: string, isAi: boolean, seed: string) {
     const available = room.identities.filter((identity) => !identity.participantId);
-    if (available.length === 0) throw new ApiError(409, "room_full", "That Who's Who room already has all 21 seats filled.");
+    if (available.length === 0) throw new ApiError(409, "room_full", `That Who's Who room already has all ${WHOS_WHO_SEAT_COUNT} seats filled.`);
     const identity = available[this.stableIndex(seed, available.length)];
     if (!identity) throw new Error("No Who's Who identity available.");
     this.prepareIdentity(identity, isAi, seed, room.identities.indexOf(identity), participantId);

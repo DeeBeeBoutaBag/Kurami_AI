@@ -673,6 +673,13 @@ function TopNav() {
           <ConnectionPill connection={connection} />
         </div>
       </nav>
+      <nav className="mx-auto flex max-w-7xl gap-2 overflow-x-auto border-t border-white/10 px-4 py-2 md:hidden" aria-label="Mobile primary">
+        <NavItem to="/join">Join</NavItem>
+        <NavItem to="/hub">Hub</NavItem>
+        <NavItem to="/leaderboard">Leaderboard</NavItem>
+        <NavItem to="/charter">Charter</NavItem>
+        <NavItem to="/facilitator">Facilitator</NavItem>
+      </nav>
     </header>
   );
 }

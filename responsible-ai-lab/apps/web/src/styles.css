@@ -1200,6 +1200,51 @@ textarea:focus-visible {
   align-items: stretch;
 }
 
+.detective-mission-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+  color: rgba(247, 242, 232, 0.86);
+  line-height: 1.45;
+}
+
+.detective-phone-brief {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.35fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  border-color: rgba(246, 201, 69, 0.28);
+  background:
+    linear-gradient(90deg, rgba(246, 201, 69, 0.1), rgba(196, 200, 207, 0.045)),
+    rgba(12, 13, 15, 0.78);
+}
+
+.detective-phone-brief p {
+  margin: 0;
+  color: rgba(247, 242, 232, 0.82);
+  line-height: 1.5;
+}
+
+.detective-scroll-hint,
+.detective-form-hint {
+  color: rgba(255, 244, 188, 0.86);
+  line-height: 1.45;
+}
+
+.detective-scroll-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.detective-form-hint {
+  border: 1px solid rgba(246, 201, 69, 0.24);
+  border-radius: 8px;
+  padding: 0.8rem;
+  background: rgba(246, 201, 69, 0.08);
+}
+
 .detective-guide-card {
   display: grid;
   grid-template-columns: minmax(220px, 0.58fr) minmax(0, 1.42fr);
@@ -2070,6 +2115,7 @@ meter {
   .mafia-join-card,
   .detective-join-card,
   .detective-brief,
+  .detective-phone-brief,
   .detective-guide-card,
   .mafia-layout,
   .mafia-projection-grid {
@@ -2160,6 +2206,28 @@ meter {
   .mafia-seat-grid-display,
   .mafia-master-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detective-room-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .detective-room-chip,
+  .evidence-card {
+    min-height: 112px;
+  }
+
+  .detective-scroll-hint {
+    font-size: 0.84rem;
+  }
+
+  .mobile-wide-action,
+  .button-row .button {
+    width: 100%;
+  }
+
+  .button-row {
+    align-items: stretch;
   }
 
   .surface-title-row {

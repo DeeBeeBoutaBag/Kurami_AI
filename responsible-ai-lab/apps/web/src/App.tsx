@@ -1889,6 +1889,12 @@ function DataDetectivePage() {
           <p className="muted">
             Your facilitator will give one of these room IDs: <strong>{roomCodeText}</strong>. Join that room, then work with everyone inside it.
           </p>
+          <ol className="detective-mission-list" aria-label="Data-Detective student mission">
+            <li>Read your company dossier.</li>
+            <li>Search for a real source or fact.</li>
+            <li>Post one claim to the shared board.</li>
+            <li>Discuss, then vote fund or reject.</li>
+          </ol>
         </div>
         <form
           className="mafia-room-form"
@@ -1901,7 +1907,7 @@ function DataDetectivePage() {
             <span className="field-label">Room ID</span>
             <input className="input" value={roomCode} onChange={(event) => setRoomCode(event.target.value)} onBlur={() => setRoomCode(normalizeDetectiveRoomId(roomCode))} placeholder="venture-north" autoCapitalize="none" />
           </label>
-          <Button type="submit" disabled={normalizeDetectiveRoomId(roomCode).length < 3 || joinRoom.isPending}>
+          <Button type="submit" className="mobile-wide-action" disabled={normalizeDetectiveRoomId(roomCode).length < 3 || joinRoom.isPending}>
             <Play size={18} /> Join Room
           </Button>
         </form>
@@ -1981,7 +1987,17 @@ function DataDetectivePage() {
               </div>
             </Surface>
           </section>
+          <Surface className="detective-phone-brief">
+            <div>
+              <p className="eyebrow">Student mission</p>
+              <h2>Act like an investor team</h2>
+            </div>
+            <p>
+              Pick one claim, find evidence, post it for the room, and challenge each other before the final fund or reject vote. Do not post private personal information.
+            </p>
+          </Surface>
 
+          <p className="detective-scroll-hint">Tap a dossier card to read it. On phones, swipe sideways to see all dossier cards.</p>
           <section className="evidence-board">
             {activeRoom.business.documents.map((document) => (
               <button key={document.id} className={`evidence-card ${selectedDocument?.id === document.id ? "evidence-card-active" : ""}`} type="button" onClick={() => setSelectedDocumentId(document.id)}>
@@ -2005,8 +2021,11 @@ function DataDetectivePage() {
             <Surface>
               <h2>Add a claim or finding</h2>
               <p className="microcopy">Add one useful finding at a time. Your room will see it immediately.</p>
+              <div className="detective-form-hint">
+                Fast version: write the claim, what you found, and where you found it. Then pick the best dropdown choices.
+              </div>
               <form
-                className="form-stack"
+                className="form-stack detective-claim-form"
                 onSubmit={(event) => {
                   event.preventDefault();
                   claimMutation.mutate();
@@ -2014,7 +2033,7 @@ function DataDetectivePage() {
               >
                 <label>
                   <span className="field-label">Claim you are testing</span>
-                  <textarea className="textarea" value={claimForm.claim} onChange={(event) => setClaimForm({ ...claimForm, claim: event.target.value })} placeholder="Example: BrightCart needs a price fairness rule before funding." rows={2} />
+                  <textarea className="textarea" value={claimForm.claim} onChange={(event) => setClaimForm({ ...claimForm, claim: event.target.value })} placeholder="Example: Investors should fund, reject, or require a condition because..." rows={2} />
                 </label>
                 <label>
                   <span className="field-label">What you found</span>
@@ -2023,7 +2042,7 @@ function DataDetectivePage() {
                 <div className="field-grid">
                   <label>
                     <span className="field-label">Source title</span>
-                    <input className="input" value={claimForm.sourceTitle} onChange={(event) => setClaimForm({ ...claimForm, sourceTitle: event.target.value })} placeholder="Dossier, article, report, or company page" />
+                    <input className="input" value={claimForm.sourceTitle} onChange={(event) => setClaimForm({ ...claimForm, sourceTitle: event.target.value })} placeholder="Website, article, report, or dossier" />
                   </label>
                   <label>
                     <span className="field-label">Source URL optional</span>
@@ -2078,7 +2097,7 @@ function DataDetectivePage() {
                   <span className="field-label">Next thing to verify optional</span>
                   <textarea className="textarea" value={claimForm.nextStep} onChange={(event) => setClaimForm({ ...claimForm, nextStep: event.target.value })} placeholder="What should the room check next?" rows={2} />
                 </label>
-                <Button type="submit" disabled={claimForm.claim.trim().length < 6 || claimForm.finding.trim().length < 12 || claimForm.sourceTitle.trim().length < 3 || claimMutation.isPending}>
+                <Button type="submit" className="mobile-wide-action" disabled={claimForm.claim.trim().length < 6 || claimForm.finding.trim().length < 12 || claimForm.sourceTitle.trim().length < 3 || claimMutation.isPending}>
                   <ShieldCheck size={18} /> Add Claim
                 </Button>
               </form>
